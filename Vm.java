@@ -147,8 +147,7 @@ class Vm {
           break;
 
         case 20: // in: 20 a 
-          char in = (char)System.in.read();
-          mem[a] = (int)c;
+          mem[a] = System.in.read();
           pc += 2;
           break;
 

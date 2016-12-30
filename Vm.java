@@ -1,47 +1,47 @@
 import java.io.*;
+import java.lang.*;
 import java.nio.*;
 import java.nio.file.*;
 import java.util.*;
 
 class Vm {
-  int pc = 0;
-  final int[] reg = new int[8];
-  final Deque<Integer> stack = new LinkedList<>();
-  final int [] bin;
   static final int MAX = 32768;
+  int pc = 0;
+  final Deque<Integer> stack = new LinkedList<>();
+  final int [] mem = new int[MAX + 8];
+  boolean debug = false;
    
   Vm(int[] bin) {
-    this.bin = bin;
+    assert bin.length < MAX;
+    System.arraycopy(bin, 0, mem, 0, bin.length);
   }
-  
-  int res(int i) {
-    if (i >= MAX) {
-      return reg[i - MAX];
+
+  int res(int a) {
+    if (a < MAX) {
+      return a;
     }
-    return i;
+    return mem[a];
   }
 
-  int reg(int r) {
-    return r - MAX;
-  }
-
-  void run() {
+  void run() throws IOException {
     System.out.println("Starting");
     StringBuilder out = new StringBuilder();
-    while (pc < bin.length) {
-      System.out.println("pc: " + pc + " " + 
-          Arrays.toString(Arrays.copyOfRange(bin, pc, pc + 4)) + "\treg:" + 
-          Arrays.toString(reg) + "\tstack: " + stack);
-      int a = pc + 1 < bin.length ?  bin[pc + 1] : 0;
-      int b = pc + 2 < bin.length ?  bin[pc + 2] : 0;
-      int c = pc + 3 < bin.length ?  bin[pc + 3] : 0;
-      switch (bin[pc]) { 
+    while (pc < mem.length) {
+      if (debug) {
+        System.out.println("pc: " + pc + " ins:" + 
+            Arrays.toString(Arrays.copyOfRange(mem, pc, pc + 4)) + "\tregisters:" + 
+            Arrays.toString(Arrays.copyOfRange(mem,MAX, MAX + 8)) + "\tstack: " + stack);
+      }
+      int a = pc + 1 < mem.length ?  mem[pc + 1] : 0;
+      int b = pc + 2 < mem.length ?  mem[pc + 2] : 0;
+      int c = pc + 3 < mem.length ?  mem[pc + 3] : 0;
+      switch (mem[pc]) { 
         case 0: // halt: 0
           pc = Integer.MAX_VALUE;
           break;
 
         case 1: // set: 1 a b
-          reg[reg(a)] = res(b);
+          mem[a] = res(b);
           pc += 3;
           break;
 
@@ -51,17 +51,17 @@ class Vm {
           break;
         
         case 3: // pop: 2 a
-          reg[reg(a)] = stack.pollFirst();
+          mem[a] = stack.pollFirst();
           pc += 2;
           break;
 
         case 4: // eq: 4 a b c
-          reg[reg(a)] = (res(b) == res(c) ? 1 : 0);
+          mem[a] = (res(b) == res(c) ? 1 : 0);
           pc += 4; 
           break;
         
         case 5: // gt: 5 a b c
-          reg[reg(a)] = (res(b) >  res(c) ? 1 : 0);
+          mem[a] = (res(b) >  res(c) ? 1 : 0);
           pc += 4; 
           break;
 
@@ -86,38 +86,44 @@ class Vm {
           break;
         
         case 9: // add: 9 a b c
-          reg[reg(a)] = (b + c) % MAX;
+          mem[a] = (res(b) + res(c)) % MAX;
           pc += 4; 
           break;
 
         case 10: // mult: 10 a b c
-          reg[reg(a)] = (b * c) % MAX;
+          mem[a] = (res(b) * res(c)) % MAX;
           pc += 4; 
           break;
         
         case 11: // mod: 11 a b c
-          reg[reg(a)] = b % c;
+          mem[a] = res(b) % res(c);
           pc += 4; 
           break;
 
         case 12: // and: 12 a b c
-          reg[reg(a)] = res(b) & res(c);
+          mem[a] = res(b) & res(c);
           pc += 4;
           break;
         
         case 13: // or: 13 a b c
-          reg[reg(a)] = res(b) | res(c);
+          mem[a] = res(b) | res(c);
           pc += 4;
           break;
         
         case 14: // not: 14 a b
-          reg[reg(a)] = (0x7FFF & ~res(b));
+          mem[a] = (0x7FFF & ~res(b));
           pc += 3;
           break;
         
         case 15: // rmem: 15 a b
-          if 
-          bin[a] = bin[b];
+          // read memory at address <b> and write it to <a>
+          mem[a] = mem[res(b)];
+          pc += 3;
+          break;
+        
+        case 16: // wmem: 16 a b
+          // write the value from <b> into memory at address <a>
+          mem[res(a)] = res(b);
           pc += 3;
           break;
 
@@ -131,7 +137,18 @@ class Vm {
           break;
 
         case 19: // out: 19 a
-          out.append(Character.toString((char)res(a)));
+          String str = Character.toString((char)res(a));
+          if (debug) {
+            out.append(str);
+          } else {
+            System.out.print(str);
+          }
+          pc += 2;
+          break;
+
+        case 20: // in: 20 a 
+          char in = (char)System.in.read();
+          mem[a] = (int)c;
           pc += 2;
           break;
 
@@ -140,9 +157,8 @@ class Vm {
           break;
 
         default:
+          System.out.println("Unknown instruction: " + mem[pc]);
           pc++;
-          System.out.println("Unknown instruction");
-
       }
     }
     System.out.println(out.toString());

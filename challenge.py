@@ -100,6 +100,7 @@ class Vm:
             self.pc += 3
     
     # add: 9 a b c
+    # assign into <a> the sum of <b> and <c> (modulo 32768)
     def add(self, tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
         tr.write('add: %d, %d, %d\n' % (a, b, c) )
@@ -148,10 +149,27 @@ class Vm:
         self.pc += 3
     
     # rmem: 15 a b
-    # read memory at address <b> and write it to <a>
+    # read memory at address <b> and write it to <a>  (mod 32768)
+    def rmem(self, tr): 
+        a, b = self.mem[self.pc + 1], self.mem[self.pc + 2]
+        tr.write('rmem: %d, %d\n' % (a, b))
+        self.reg[a % MAX] = \
+            self.mem[b] if b < MAX else self.mem[self.reg[b % MAX]]
+        self.pc += 3
 
     # wmem: 16 a b
     # write the value from <b> into memory at address <a>
+    def wmem(self, tr): 
+        a, b = self.mem[self.pc + 1], self.mem[self.pc + 2]
+        tr.write('wmem: %d, %d\n' % (a, b))
+        v = b if b < MAX else self.reg[b % MAX]
+
+        if a < MAX:
+            self.mem[a] = v
+        else:
+            self.mem[self.reg[a % MAX]] = v
+
+        self.pc += 3
 
     # call: 17 a
     # write the address of the next instruction to the stack and jump to <a>
@@ -198,7 +216,7 @@ class Vm:
         with open('trace', 'w') as tr:
             while self.pc < MAX:
                 i = self.mem[self.pc]
-                tr.write('reg: %s\t [%d] %d=' % (self.reg, self.pc, i))
+                tr.write('reg: %32s [%d] %d=' % (self.reg, self.pc, i))
                 if i == 0:
                     self.halt(tr)
                 elif i == 1:
@@ -219,7 +237,7 @@ class Vm:
                     self.jf(tr)
                 elif i == 9:
                     self.add(tr)
-                elif i == 1:
+                elif i == 10:
                     self.mult(tr)
                 elif i == 11:
                     self.mod(tr)
@@ -229,6 +247,10 @@ class Vm:
                     self.orfn(tr)
                 elif i == 14:
                     self.notfn(tr)
+                elif i == 15:
+                    self.rmem(tr)
+                elif i == 16:
+                    self.wmem(tr)
                 elif i == 17:
                     self.call(tr)
                 elif i == 18:

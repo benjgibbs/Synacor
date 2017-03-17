@@ -3,20 +3,6 @@ from sys import stdin
 
 MAX = 32768
 
-def add(a,b):
-    return (a+b) % MAX
-
-def sub(a,b):
-    return (a - b) % MAX
-
-def mult(a,b):
-    return (a * b) % MAX
-
-def div(a,b):
-    return (a / b) % MAX
-
-assert add(32758,15) == 5
-
 def load():
     with open('challenge.bin', 'rb') as f:
         while True:
@@ -43,14 +29,14 @@ class Vm:
     # set: 1 a b
     def set(self, tr):
         a, b = self.reg_addr(1), self.read(2)
-        tr.write('set: %d, %d\n' % (a, b) )
+        tr.write('set:   %5d, %5d\n' % (a, b) )
         self.reg[a] = b
         self.pc += 3
     
     # push: 2 a
     def push(self, tr):
         a = self.read(1)
-        tr.write('push: %d\n' % a )
+        tr.write('push:  %5d\n' % a )
         self.stack.append(a)
         self.pc += 2
     
@@ -58,34 +44,34 @@ class Vm:
     def pop(self, tr):
         a = self.reg_addr(1)
         p = self.stack.pop()
-        tr.write('pop: %d (%d)\n' % (a, p) )
+        tr.write('pop:   %5d (%5d)\n' % (a, p) )
         self.reg[a] = p
         self.pc += 2
 
     # eq: 4 a b c
     def eq(self, tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        tr.write('eq: %d, %d, %d\n' % (a, b, c) )
+        tr.write('eq:    %5d, %5d, %5d\n' % (a, b, c) )
         self.reg[a] = 1 if b == c else 0
         self.pc += 4
         
     # gt: 5 a b c
     def gt(self, tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        tr.write('gt: %d, %d, %d\n' % (a, b, c))
+        tr.write('gt:    %5d, %5d, %5d\n' % (a, b, c))
         self.reg[a] = 1 if b > c else 0
         self.pc += 4
     
     # jmp: 6 a
     def jmp(self, tr):
         a = self.read(1)
-        tr.write('jmp: %d\n' % (a))
+        tr.write('jmp:   %5d\n' % (a))
         self.pc = a
 
     # jt: 7 a b
     def jt(self, tr):
         a, b = self.read(1), self.read(2)
-        tr.write('jt: %d %d\n' % (a, b))
+        tr.write('jt:    %5d, %5d\n' % (a, b))
         if a != 0:
             self.pc = b            
         else:
@@ -94,7 +80,7 @@ class Vm:
     # jf: 8 a b
     def jf(self, tr):
         a, b = self.read(1), self.read(2)
-        tr.write('jf: %d %d\n' % (a, b))
+        tr.write('jf:    %5d, %5d\n' % (a, b))
         if a == 0:
             self.pc = b            
         else:
@@ -104,23 +90,23 @@ class Vm:
     # assign into <a> the sum of <b> and <c> (modulo 32768)
     def add(self, tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        tr.write('add: %d, %d, %d\n' % (a, b, c) )
-        self.reg[a] = add(b,c)
+        tr.write('add:   %5d, %5d, %5d\n' % (a, b, c) )
+        self.reg[a] = (b+c) % MAX
         self.pc += 4
 
     # mult: 10 a b c
     # store into <a> the product of <b> and <c> (modulo 32768)
     def mult(self,tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        tr.write('mult: %d, %d, %d\n' % (a, b, c) )
-        self.reg[a] = mult(b,c)
+        tr.write('mult:  %5d, %5d, %5d\n' % (a, b, c) )
+        self.reg[a] = (b * c) % MAX
         self.pc += 4
 
     # mod: 11 a b c
     # store into <a> the remainder of <b> divided by <c>
     def mod(self,tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        tr.write('mod: %d, %d, %d\n' % (a, b, c) )
+        tr.write('mod:   %5d, %5d, %5d\n' % (a, b, c) )
         self.reg[a] = b % c
         self.pc += 4
 
@@ -128,7 +114,7 @@ class Vm:
     # stores into <a> the bitwise and of <b> and <c>
     def andfn(self, tr): 
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        tr.write('add: %d, %d, %d\n' % (a, b, c) )
+        tr.write('add:   %5d, %5d, %5d\n' % (a, b, c) )
         self.reg[a] = b & c
         self.pc += 4
 
@@ -136,7 +122,7 @@ class Vm:
     # stores into <a> the bitwise or of <b> and <c>
     def orfn(self, tr): 
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        tr.write('or: %d, %d, %d\n' % (a, b, c) )
+        tr.write('or:    %5d, %5d, %5d\n' % (a, b, c) )
         self.reg[a] = b | c
         self.pc += 4
 
@@ -145,7 +131,7 @@ class Vm:
     # '{0:b}'.format(~int("1010",2) & 32767) -> '111111111110101'
     def notfn(self, tr): 
         a, b = self.reg_addr(1), self.read(2)
-        tr.write('not: %d, %d\n' % (a, b) )
+        tr.write('not:   %5d, %5d\n' % (a, b) )
         self.reg[a] = ~b & (2**15-1)
         self.pc += 3
     
@@ -153,7 +139,7 @@ class Vm:
     # read memory at address <b> and write it to <a>  (mod 32768)
     def rmem(self, tr): 
         a, b = self.mem[self.pc + 1], self.mem[self.pc + 2]
-        tr.write('rmem: %d, %d\n' % (a, b))
+        tr.write('rmem:  %5d, %5d\n' % (a, b))
         self.reg[a % MAX] = \
             self.mem[b] if b < MAX else self.mem[self.reg[b % MAX]]
         self.pc += 3
@@ -162,7 +148,7 @@ class Vm:
     # write the value from <b> into memory at address <a>
     def wmem(self, tr): 
         a, b = self.mem[self.pc + 1], self.mem[self.pc + 2]
-        tr.write('wmem: %d, %d\n' % (a, b))
+        tr.write('wmem:  %5d, %5d\n' % (a, b))
         v = b if b < MAX else self.reg[b % MAX]
 
         if a < MAX:
@@ -176,7 +162,7 @@ class Vm:
     # write the address of the next instruction to the stack and jump to <a>
     def call(self, tr):
         a = self.read(1)
-        tr.write('call: %d\n' % (a) )
+        tr.write('call:  %5d\n' % (a) )
         self.stack.append(self.pc+2)
         self.pc = a
 
@@ -184,12 +170,17 @@ class Vm:
     # remove the top element from the stack and jump to it; empty stack = halt
     def ret(self, tr):
         self.pc = self.stack.pop()
-        tr.write('ret: %d\n' % (self.pc) )
+        tr.write('ret:   %5d\n' % (self.pc) )
     
     # out: 19 a
     def out(self, tr):
         a = self.read(1)
-        tr.write('out: %d\t%c\n' % (a, a) )
+        c = chr(a)
+
+        if c == '\n':
+            c = '\\n'
+
+        tr.write('out:   %5d (%s)\n' % (a, c) )
         stdout.write('%c' % chr(a))
         self.pc += 2
 
@@ -201,6 +192,7 @@ class Vm:
     def readin(self, tr):
         a = self.reg_addr(1)
         c = stdin.read(1)
+        tr.write('in:    %5d (%3d,%c)\n' % (a, ord(c), c) )
         self.reg[a] = ord(c)
         self.pc += 2
     
@@ -208,8 +200,6 @@ class Vm:
     def noop(self, tr):
         tr.write('noop\n')
         self.pc += 1
-    
-    
   
     
     #############################################################
@@ -251,7 +241,8 @@ class Vm:
         with open('trace', 'w') as tr:
             while self.pc < MAX:
                 i = self.mem[self.pc]
-                tr.write('reg: %32s [%d] %d=' % (self.reg, self.pc, i))
+                # tr.write('reg: %32s [%d] %d=' % (self.reg, self.pc, i))
+                tr.write('[%5d] %2d=' % (self.pc, i))
                 if  i < len(fn_table):
                     fn_table[i](tr)
                 else:

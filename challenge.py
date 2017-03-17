@@ -1,4 +1,5 @@
 from sys import stdout
+from sys import stdin
 
 MAX = 32768
 
@@ -192,6 +193,17 @@ class Vm:
         stdout.write('%c' % chr(a))
         self.pc += 2
 
+     # in: 20 a
+     #   read a character from the terminal and write its ascii code to <a>; 
+     #   it can be assumed that once input starts, it will continue until a 
+     #   newline is encountered; this means that you can safely read whole 
+     # lines from the keyboard and trust that they will be fully read
+    def readin(self, tr):
+        a = self.reg_addr(1)
+        c = stdin.read(1)
+        self.reg[a] = ord(c)
+        self.pc += 2
+    
     # noop: 21
     def noop(self, tr):
         tr.write('noop\n')
@@ -211,54 +223,37 @@ class Vm:
     def reg_addr(self, offset):
         return self.mem[self.pc + offset] % MAX
     
-    
     def run(self):
+        fn_table = [
+                self.halt,
+                self.set,
+                self.push,
+                self.pop,
+                self.eq,
+                self.gt,
+                self.jmp,
+                self.jt,
+                self.jf,
+                self.add,
+                self.mult,
+                self.mod,
+                self.andfn,
+                self.orfn,
+                self.notfn,
+                self.rmem,
+                self.wmem,
+                self.call,
+                self.ret,
+                self.out,
+                self.readin,
+                self.noop ]
+
         with open('trace', 'w') as tr:
             while self.pc < MAX:
                 i = self.mem[self.pc]
                 tr.write('reg: %32s [%d] %d=' % (self.reg, self.pc, i))
-                if i == 0:
-                    self.halt(tr)
-                elif i == 1:
-                    self.set(tr)
-                elif i == 2:
-                    self.push(tr)
-                elif i == 3:
-                    self.pop(tr)
-                elif i == 4:
-                    self.eq(tr)
-                elif i == 5:
-                    self.gt(tr)
-                elif i == 6:
-                    self.jmp(tr)
-                elif i == 7:
-                    self.jt(tr)
-                elif i == 8:
-                    self.jf(tr)
-                elif i == 9:
-                    self.add(tr)
-                elif i == 10:
-                    self.mult(tr)
-                elif i == 11:
-                    self.mod(tr)
-                elif i == 12:
-                    self.andfn(tr)
-                elif i == 13:
-                    self.orfn(tr)
-                elif i == 14:
-                    self.notfn(tr)
-                elif i == 15:
-                    self.rmem(tr)
-                elif i == 16:
-                    self.wmem(tr)
-                elif i == 17:
-                    self.call(tr)
-                elif i == 18:
-                    self.ret(tr)
-                elif i == 19:
-                    self.out(tr)
-                elif i == 21:
-                    self.noop(tr)
+                if  i < len(fn_table):
+                    fn_table[i](tr)
                 else:
                     self.pc = MAX
                     print('Unknown op code: ' + str(i))

@@ -154,25 +154,26 @@ class Vm:
     # rmem: 15 a b
     # read memory at address <b> and write it to <a>  (mod 32768)
     def rmem(self, tr): 
-        a, b = self.mem[self.pc + 1], self.mem[self.pc + 2]
+        a, b = self.read_mem(self.pc + 1), self.read_mem(self.pc + 2)
         if self.trace:
             tr.write('rmem:  %5d, %5d\n' % (a, b))
-        self.reg[a % MAX] = \
-            self.mem[b] if b < MAX else self.mem[self.reg[b % MAX]]
+
+        v = self.read_mem(b) if b < MAX else self.read_mem(self.reg[b % MAX]) 
+        self.reg[a % MAX] = v
         self.pc += 3
 
     # wmem: 16 a b
     # write the value from <b> into memory at address <a>
     def wmem(self, tr): 
-        a, b = self.mem[self.pc + 1], self.mem[self.pc + 2]
+        a, b = self.read_mem(self.pc + 1), self.read_mem(self.pc + 2)
         if self.trace:
             tr.write('wmem:  %5d, %5d\n' % (a, b))
         v = b if b < MAX else self.reg[b % MAX]
 
         if a < MAX:
-            self.mem[a] = v
+            self.write_mem(a, v)
         else:
-            self.mem[self.reg[a % MAX]] = v
+            self.write_mem(self.reg[a % MAX], v)
 
         self.pc += 3
 
@@ -228,14 +229,23 @@ class Vm:
     #############################################################
     
     def read(self, offset):
-        a = self.mem[self.pc + offset]
+        a = self.read_mem(self.pc + offset)
         if a < MAX:
             return a
         return self.reg[a % MAX]
     
     def reg_addr(self, offset):
-        return self.mem[self.pc + offset] % MAX
+        return self.read_mem(self.pc + offset) % MAX
     
+    
+    def write_mem(self, addr, val):
+        self.mem[addr] = val
+    
+    def read_mem(self, addr):
+        return self.mem[addr]
+    
+    
+    #############################################################
     def run(self):
         fn_table = [
                 self.halt,
@@ -263,7 +273,7 @@ class Vm:
 
         with open('/Volumes/RAMDisk/trace', 'w') as tr:
             while self.pc < MAX:
-                i = self.mem[self.pc]
+                i = self.read_mem(self.pc)
 
                 if self.trace:
                     tr.write('[%5d] %2d=' % (self.pc, i))
@@ -273,26 +283,8 @@ class Vm:
                 else:
                     self.pc = MAX
                     print('Unknown op code: ' + str(i))
-                
-#               with open('/Volumes/RAMDisk/memdmp', 'w') as memdmp:# {{{
-#                   row_len = 8
-#                   memdmp.write('PC: %d\n' % self.pc)
-#                   memdmp.write('Reg: %s\n' % self.reg)
-#                   memdmp.write('Mem:\n')
-#                   for i in range(0, int(len(self.mem)/row_len)):
-#                       memdmp.write('%5d: ' % (i * row_len))
-#                       for j in range(0, row_len):
-#                           v = self.mem[i * row_len + j]
-#                           c = chr(v)
-#                           if c < 'A' or  c > 'z':
-#                               c = ''
-#                           memdmp.write('%5d [%2s] ' % (v, c))
-#                       memdmp.write('\n')# }}}
-
     
     
-# prog = [9,32768,32769,4,19,32768]
-# prog = [1,0,2,1,1,32768,0]
 prog = load()
 vm = Vm(prog)
 vm.run()

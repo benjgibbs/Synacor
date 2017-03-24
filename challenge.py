@@ -1,5 +1,7 @@
 from sys import stdout
 from sys import stdin
+import struct
+import readline
 
 MAX = 32768
 
@@ -14,10 +16,20 @@ def load():
                 break
 
 class Vm:
-    def __init__(self, prog):
+    def __init__(self, prog, mem):
         self.trace = False
         self.reg = 8 * [0]
-        self.mem = list(prog) #= [0] * 2**15
+        
+        self.mem = mem
+
+        for i in range(2**15):
+            self.write_mem(i,0)
+        
+        i = 0
+        for p in prog:
+            self.write_mem(i, p)
+            i += 1
+
         self.stack = list()
         self.pc = 0  
 
@@ -239,10 +251,21 @@ class Vm:
     
     
     def write_mem(self, addr, val):
-        self.mem[addr] = val
+        # All numbers are 15 bit so we read/write 2 bytes
+        # print('Writing %d to %d' % (val, addr))
+        addr = 2 * addr
+        self.mem.seek(addr, 0)
+        self.mem.write(struct.pack('>I', val)[2:])
+        self.mem.seek(addr, 0)
+        # print('Check %s' % self.mem.read(2))
     
     def read_mem(self, addr):
-        return self.mem[addr]
+        addr = 2 * addr
+        self.mem.seek(addr, 0)
+        b = self.mem.read(2) 
+        r = struct.unpack('>I',  2 * b'\x00' + b)[0]
+        # print('Read %s =>  %d from %d' % (b, r, addr))
+        return r
     
     
     #############################################################
@@ -283,8 +306,11 @@ class Vm:
                 else:
                     self.pc = MAX
                     print('Unknown op code: ' + str(i))
+
     
     
 prog = load()
-vm = Vm(prog)
-vm.run()
+
+with open('/Volumes/RAMDisk/mem', 'w+b', buffering=0) as mem:
+    vm = Vm(prog, mem)
+    vm.run()

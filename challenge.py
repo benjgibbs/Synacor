@@ -17,7 +17,7 @@ def load():
 
 class Vm:
     def __init__(self, prog, mem):
-        self.trace = False
+        self.trace = True
         self.reg = 8 * [0]
         
         self.mem = mem
@@ -44,7 +44,7 @@ class Vm:
     def set(self, tr):
         a, b = self.reg_addr(1), self.read(2)
         if self.trace:
-            tr.write('set:   %5d, %5d\n' % (a, b) )
+            tr.write('set:   0x%04x, 0x%04x\n' % (a, b) )
         self.reg[a] = b
         self.pc += 3
     
@@ -52,7 +52,7 @@ class Vm:
     def push(self, tr):
         a = self.read(1)
         if self.trace:
-            tr.write('push:  %5d\n' % a )
+            tr.write('push:  0x%04x\n' % a )
         self.stack.append(a)
         self.pc += 2
     
@@ -61,7 +61,7 @@ class Vm:
         a = self.reg_addr(1)
         p = self.stack.pop()
         if self.trace:
-            tr.write('pop:   %5d (%5d)\n' % (a, p) )
+            tr.write('pop:   0x%04x (0x%04x)\n' % (a, p) )
         self.reg[a] = p
         self.pc += 2
 
@@ -69,7 +69,7 @@ class Vm:
     def eq(self, tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
         if self.trace:
-            tr.write('eq:    %5d, %5d, %5d\n' % (a, b, c) )
+            tr.write('eq:    0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
         self.reg[a] = 1 if b == c else 0
         self.pc += 4
         
@@ -77,7 +77,7 @@ class Vm:
     def gt(self, tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
         if self.trace: 
-            tr.write('gt:    %5d, %5d, %5d\n' % (a, b, c))
+            tr.write('gt:    0x%04x, 0x%04x, 0x%04x\n' % (a, b, c))
         self.reg[a] = 1 if b > c else 0
         self.pc += 4
     
@@ -85,14 +85,14 @@ class Vm:
     def jmp(self, tr):
         a = self.read(1)
         if self.trace:
-            tr.write('jmp:   %5d\n' % (a))
+            tr.write('jmp:   0x%04x\n' % (a))
         self.pc = a
 
     # jt: 7 a b
     def jt(self, tr):
         a, b = self.read(1), self.read(2)
         if self.trace:
-            tr.write('jt:    %5d, %5d\n' % (a, b))
+            tr.write('jt:    0x%04x, 0x%04x\n' % (a, b))
         if a != 0:
             self.pc = b            
         else:
@@ -102,7 +102,7 @@ class Vm:
     def jf(self, tr):
         a, b = self.read(1), self.read(2)
         if self.trace:
-            tr.write('jf:    %5d, %5d\n' % (a, b))
+            tr.write('jf:    0x%04x, 0x%04x\n' % (a, b))
         if a == 0:
             self.pc = b            
         else:
@@ -113,7 +113,7 @@ class Vm:
     def add(self, tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
         if self.trace:
-            tr.write('add:   %5d, %5d, %5d\n' % (a, b, c) )
+            tr.write('add:   0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
         self.reg[a] = (b+c) % MAX
         self.pc += 4
 
@@ -122,7 +122,7 @@ class Vm:
     def mult(self,tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
         if self.trace:
-            tr.write('mult:  %5d, %5d, %5d\n' % (a, b, c) )
+            tr.write('mult:  0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
         self.reg[a] = (b * c) % MAX
         self.pc += 4
 
@@ -131,7 +131,7 @@ class Vm:
     def mod(self,tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
         if self.trace:
-            tr.write('mod:   %5d, %5d, %5d\n' % (a, b, c) )
+            tr.write('mod:   0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
         self.reg[a] = b % c
         self.pc += 4
 
@@ -140,7 +140,7 @@ class Vm:
     def andfn(self, tr): 
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
         if self.trace:
-            tr.write('add:   %5d, %5d, %5d\n' % (a, b, c) )
+            tr.write('add:   0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
         self.reg[a] = b & c
         self.pc += 4
 
@@ -149,7 +149,7 @@ class Vm:
     def orfn(self, tr): 
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
         if self.trace:
-            tr.write('or:    %5d, %5d, %5d\n' % (a, b, c) )
+            tr.write('or:    0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
         self.reg[a] = b | c
         self.pc += 4
 
@@ -159,7 +159,7 @@ class Vm:
     def notfn(self, tr): 
         a, b = self.reg_addr(1), self.read(2)
         if self.trace:
-            tr.write('not:   %5d, %5d\n' % (a, b) )
+            tr.write('not:   0x%04x, 0x%04x\n' % (a, b) )
         self.reg[a] = ~b & (2**15-1)
         self.pc += 3
     
@@ -168,7 +168,7 @@ class Vm:
     def rmem(self, tr): 
         a, b = self.read_mem(self.pc + 1), self.read_mem(self.pc + 2)
         if self.trace:
-            tr.write('rmem:  %5d, %5d\n' % (a, b))
+            tr.write('rmem:  0x%04x, 0x%04x\n' % (a, b))
 
         v = self.read_mem(b) if b < MAX else self.read_mem(self.reg[b % MAX]) 
         self.reg[a % MAX] = v
@@ -179,7 +179,7 @@ class Vm:
     def wmem(self, tr): 
         a, b = self.read_mem(self.pc + 1), self.read_mem(self.pc + 2)
         if self.trace:
-            tr.write('wmem:  %5d, %5d\n' % (a, b))
+            tr.write('wmem:  0x%04x, 0x%04x\n' % (a, b))
         v = b if b < MAX else self.reg[b % MAX]
 
         if a < MAX:
@@ -194,7 +194,7 @@ class Vm:
     def call(self, tr):
         a = self.read(1)
         if self.trace:
-            tr.write('call:  %5d\n' % (a) )
+            tr.write('call:  0x%04x\n' % (a) )
         self.stack.append(self.pc+2)
         self.pc = a
 
@@ -203,7 +203,7 @@ class Vm:
     def ret(self, tr):
         self.pc = self.stack.pop()
         if self.trace:
-            tr.write('ret:   %5d\n' % (self.pc) )
+            tr.write('ret:   0x%04x\n' % (self.pc) )
     
     # out: 19 a
     def out(self, tr):
@@ -214,7 +214,7 @@ class Vm:
             c = '\\n'
 
         if self.trace:
-            tr.write('out:   %5d (%s)\n' % (a, c) )
+            tr.write('out:   0x%04x (%s)\n' % (a, c) )
         stdout.write('%c' % chr(a))
         self.pc += 2
 
@@ -227,7 +227,7 @@ class Vm:
         a = self.reg_addr(1)
         c = stdin.read(1)
         if self.trace:
-            tr.write('in:    %5d (%3d,%c)\n' % (a, ord(c), c) )
+            tr.write('in:    0x%04x (%3d,%c)\n' % (a, ord(c), c) )
         self.reg[a] = ord(c)
         self.pc += 2
     
@@ -299,7 +299,7 @@ class Vm:
                 i = self.read_mem(self.pc)
 
                 if self.trace:
-                    tr.write('[%5d] %2d=' % (self.pc, i))
+                    tr.write('[0x%04x] %2d=' % (self.pc, i))
 
                 if  i < len(fn_table):
                     fn_table[i](tr)

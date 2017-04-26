@@ -18,7 +18,7 @@ def read():
 
 
 mem_stream = read()
-mem = '0x{1:04x}: 0x{0:04x}'
+mem = '0x{1:04x}: 0x{0:04x} ({0:c})'
 no_op = '0x{1:04x}: {0:4s}'
 one_op = '0x{1:04x}: {0:4s} 0x{2:04x}'
 one_op_chr = '0x{1:04x}: {0:4s} 0x{2:04x} {2:c}'
@@ -134,7 +134,7 @@ while op != None:
         print(no_op.format('noop', addr))
         addr += 1
     else:
-        print(mem.format(addr, op))
+        print(mem.format(op, addr))
         addr += 1 
         
     op = next(mem_stream, None)

@@ -1,6 +1,7 @@
 from sys import stdout
 from sys import stdin
 import struct
+import io
 import readline
 
 MAX = 32768
@@ -36,23 +37,20 @@ class Vm:
     # halt: 0
     def halt(self,tr):
         print ('End')
-        if self.trace:
-            tr.write('halt\n' )
+        tr.write('halt' )
         self.pc = MAX
 
     # set: 1 a b
     def set(self, tr):
         a, b = self.reg_addr(1), self.read(2)
-        if self.trace:
-            tr.write('set:   0x%04x, 0x%04x\n' % (a, b) )
+        tr.write('set:       R%d, 0x%04x' % (a, b) )
         self.reg[a] = b
         self.pc += 3
     
     # push: 2 a
     def push(self, tr):
         a = self.read(1)
-        if self.trace:
-            tr.write('push:  0x%04x\n' % a )
+        tr.write('push:  0x%04x' % a )
         self.stack.append(a)
         self.pc += 2
     
@@ -60,39 +58,34 @@ class Vm:
     def pop(self, tr):
         a = self.reg_addr(1)
         p = self.stack.pop()
-        if self.trace:
-            tr.write('pop:   0x%04x (0x%04x)\n' % (a, p) )
+        tr.write('pop:       R%d (0x%04x)' % (a, p) )
         self.reg[a] = p
         self.pc += 2
 
     # eq: 4 a b c
     def eq(self, tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        if self.trace:
-            tr.write('eq:    0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
+        tr.write('eq:        R%d, 0x%04x, 0x%04x' % (a, b, c) )
         self.reg[a] = 1 if b == c else 0
         self.pc += 4
         
     # gt: 5 a b c
     def gt(self, tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        if self.trace: 
-            tr.write('gt:    0x%04x, 0x%04x, 0x%04x\n' % (a, b, c))
+        tr.write('gt:        R%d, 0x%04x, 0x%04x' % (a, b, c))
         self.reg[a] = 1 if b > c else 0
         self.pc += 4
     
     # jmp: 6 a
     def jmp(self, tr):
         a = self.read(1)
-        if self.trace:
-            tr.write('jmp:   0x%04x\n' % (a))
+        tr.write('jmp:   0x%04x' % (a))
         self.pc = a
 
     # jt: 7 a b
     def jt(self, tr):
         a, b = self.read(1), self.read(2)
-        if self.trace:
-            tr.write('jt:    0x%04x, 0x%04x\n' % (a, b))
+        tr.write('jt:    0x%04x, 0x%04x' % (a, b))
         if a != 0:
             self.pc = b            
         else:
@@ -101,8 +94,7 @@ class Vm:
     # jf: 8 a b
     def jf(self, tr):
         a, b = self.read(1), self.read(2)
-        if self.trace:
-            tr.write('jf:    0x%04x, 0x%04x\n' % (a, b))
+        tr.write('jf:    0x%04x, 0x%04x' % (a, b))
         if a == 0:
             self.pc = b            
         else:
@@ -112,8 +104,7 @@ class Vm:
     # assign into <a> the sum of <b> and <c> (modulo 32768)
     def add(self, tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        if self.trace:
-            tr.write('add:   0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
+        tr.write('add:       R%d, 0x%04x, 0x%04x' % (a, b, c) )
         self.reg[a] = (b+c) % MAX
         self.pc += 4
 
@@ -121,8 +112,7 @@ class Vm:
     # store into <a> the product of <b> and <c> (modulo 32768)
     def mult(self,tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        if self.trace:
-            tr.write('mult:  0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
+        tr.write('mult:      R%d, 0x%04x, 0x%04x' % (a, b, c) )
         self.reg[a] = (b * c) % MAX
         self.pc += 4
 
@@ -130,8 +120,7 @@ class Vm:
     # store into <a> the remainder of <b> divided by <c>
     def mod(self,tr):
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        if self.trace:
-            tr.write('mod:   0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
+        tr.write('mod:       R%d, 0x%04x, 0x%04x' % (a, b, c) )
         self.reg[a] = b % c
         self.pc += 4
 
@@ -139,8 +128,7 @@ class Vm:
     # stores into <a> the bitwise and of <b> and <c>
     def andfn(self, tr): 
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        if self.trace:
-            tr.write('add:   0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
+        tr.write('add:       R%d, 0x%04x, 0x%04x' % (a, b, c) )
         self.reg[a] = b & c
         self.pc += 4
 
@@ -148,8 +136,7 @@ class Vm:
     # stores into <a> the bitwise or of <b> and <c>
     def orfn(self, tr): 
         a, b, c = self.reg_addr(1), self.read(2), self.read(3)
-        if self.trace:
-            tr.write('or:    0x%04x, 0x%04x, 0x%04x\n' % (a, b, c) )
+        tr.write('or:        R%d, 0x%04x, 0x%04x' % (a, b, c) )
         self.reg[a] = b | c
         self.pc += 4
 
@@ -158,8 +145,7 @@ class Vm:
     # '{0:b}'.format(~int("1010",2) & 32767) -> '111111111110101'
     def notfn(self, tr): 
         a, b = self.reg_addr(1), self.read(2)
-        if self.trace:
-            tr.write('not:   0x%04x, 0x%04x\n' % (a, b) )
+        tr.write('not:       R%d, 0x%04x' % (a, b) )
         self.reg[a] = ~b & (2**15-1)
         self.pc += 3
     
@@ -167,8 +153,7 @@ class Vm:
     # read memory at address <b> and write it to <a>  (mod 32768)
     def rmem(self, tr): 
         a, b = self.read_mem(self.pc + 1), self.read_mem(self.pc + 2)
-        if self.trace:
-            tr.write('rmem:  0x%04x, 0x%04x\n' % (a, b))
+        tr.write('rmem:  0x%04x, 0x%04x' % (a, b))
 
         v = self.read_mem(b) if b < MAX else self.read_mem(self.reg[b % MAX]) 
         self.reg[a % MAX] = v
@@ -178,8 +163,7 @@ class Vm:
     # write the value from <b> into memory at address <a>
     def wmem(self, tr): 
         a, b = self.read_mem(self.pc + 1), self.read_mem(self.pc + 2)
-        if self.trace:
-            tr.write('wmem:  0x%04x, 0x%04x\n' % (a, b))
+        tr.write('wmem:  0x%04x, 0x%04x' % (a, b))
         v = b if b < MAX else self.reg[b % MAX]
 
         if a < MAX:
@@ -193,8 +177,7 @@ class Vm:
     # write the address of the next instruction to the stack and jump to <a>
     def call(self, tr):
         a = self.read(1)
-        if self.trace:
-            tr.write('call:  0x%04x\n' % (a) )
+        tr.write('call:  0x%04x' % (a) )
         self.stack.append(self.pc+2)
         self.pc = a
 
@@ -202,8 +185,7 @@ class Vm:
     # remove the top element from the stack and jump to it; empty stack = halt
     def ret(self, tr):
         self.pc = self.stack.pop()
-        if self.trace:
-            tr.write('ret:   0x%04x\n' % (self.pc) )
+        tr.write('ret:   0x%04x' % (self.pc) )
     
     # out: 19 a
     def out(self, tr):
@@ -213,8 +195,7 @@ class Vm:
         if c == '\n':
             c = '\\n'
 
-        if self.trace:
-            tr.write('out:   0x%04x (%s)\n' % (a, c) )
+        tr.write('out:   0x%04x (%s)' % (a, c) )
         stdout.write('%c' % chr(a))
         self.pc += 2
 
@@ -226,15 +207,13 @@ class Vm:
     def readin(self, tr):
         a = self.reg_addr(1)
         c = stdin.read(1)
-        if self.trace:
-            tr.write('in:    0x%04x (%3d,%c)\n' % (a, ord(c), c) )
+        tr.write('in:        R%d (%3d,%c)' % (a, ord(c), c) )
         self.reg[a] = ord(c)
         self.pc += 2
     
     # noop: 21
     def noop(self, tr):
-        if self.trace:
-            tr.write('noop\n')
+        tr.write('noop')
         self.pc += 1
   
     
@@ -294,18 +273,23 @@ class Vm:
                 self.readin,
                 self.noop ]
 
-        with open('/Volumes/RAMDisk/trace', 'w') as tr:
+        with open('./trace', 'w') as tr:
             while self.pc < MAX:
                 i = self.read_mem(self.pc)
-
-                if self.trace:
-                    tr.write('[0x%04x] %2d=' % (self.pc, i))
-
+                
+                buf = io.StringIO()
                 if  i < len(fn_table):
-                    fn_table[i](tr)
+                    fn_table[i](buf)
+                    if self.trace:
+                        buf.seek(0)
+                        instr = buf.readline()
+                        reg_str = str(['0x{:04x}'.format(x) for x in self.reg])
+                        stack_str = str(['0x{:04x}'.format(x) for x in self.stack])
+                        tr.write('[Ox{:04x}] {:2d}={:30s} {:s} {:s}\n'.format(self.pc, i, instr, reg_str, stack_str))
                 else:
                     self.pc = MAX
                     print('Unknown op code: ' + str(i))
+                
 
     
     

@@ -1,16 +1,82 @@
-## Memory of use
-3167 - There are / is exits
-6143 - Foothills          [20100] 
-6351 - South Foothills
-6442 - Dark cave          [23300, 28810]
-6598 - Dark cave 2
-6712 - Dark cave 3
+## Instructions
+East off the bridge to get lantern
 
-16707 = Number on moss floor
-16792 - Vault antechamber - number here
+Bottom of ladder: West South North
+
+
+blue:     9
+red:      2
+shiny:    5
+concave:  7
+corroded: 3
+9    2    5      7     3
+ _ + _ * \_^2 + \_^3 - _ = 399
+
+
+Rig teleporter
+
+>0x1566=0x6
+>0x1567=0x157a
+
+izXrYkkltRim
+
+# Orb
+
+22 on pedestal
+east has -
+east has 9 (13)
+east has x
+north has 18 (234)
+
+22 on pedestal 
+north has +
+north has 4 (26)
+south has +
+north has 4 (30)
+east has (*)
+north has (*)
+
+30 on vault
+
+
+##Codes
+
+In arch-spec:       tZuCObbDMEMN
+Start of challenge: EJjxSEujhzMW
+Self test complete: JhlqOSfLPgMQ
+On tablet:          eSaTzvAsQVhd
+Get Oil:            fjYMgZJpmWWb
+Teleporter:         ODApGLANaLcx
+Post teleport:      izXrYkkltRim
+
+
+Bad code:           Teleporter: WHjPkYYZRtWS, Mirror: WdIowXAddbYH
+
+## Memory of use
+0x17f2 - code decrypting buffer
+
+0x6577 to 0x6596 - in buffer
+
+0x657b - Inventory?? - unlikely
+
+
+
+## Assmebly to optimise
+A = 4
+B = 1
+H = ?
+
+Double B until it wraps, pushing A each time
+Double A, and set B to H
+Double B until it wraps, pushing A each time
+
+
 
 
 ## Functions
+
+0x05b2 - print out contents of r2?
+
 
 Loop ? 
   Call Contents of R1 - 0x8001 

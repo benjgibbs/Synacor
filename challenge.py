@@ -4,7 +4,7 @@ import struct
 import io
 import readline
 
-MAX = 32768
+MAX = 2 ** 15
 
 def load():
     with open('challenge.bin', 'rb') as f:
@@ -18,7 +18,7 @@ def load():
 
 class Vm:
     def __init__(self, prog, mem):
-        self.trace = True
+        self.trace = False
         self.reg = 8 * [0]
         
         self.mem = mem
@@ -207,6 +207,27 @@ class Vm:
     def readin(self, tr):
         a = self.reg_addr(1)
         c = stdin.read(1)
+
+        if c == '*':
+            print(self.reg[7])
+            self.reg[7] = 32766 #2 ** 15
+            print(self.reg[7])
+        elif c == '!':
+            self.trace = not self.trace
+            print('trace={:b}'.format(self.trace))
+        elif c == '#':
+            print('pc:\t0x{:x}'.format(self.pc))
+            print('reg:\t{:s}'.format(print_arr(self.reg)))
+            print('stack:\t{:s}'.format(print_arr(self.stack)))
+
+        elif c == '>':
+            ln = stdin.readline()
+            ps = [int(x, 16) for x in ln.strip().split('=')]
+            m = ps[0]
+            v = ps[1]
+            print('Setting 0x{:x} to 0x{:x}'.format(m, v))
+            self.write_mem(m, v)
+
         tr.write('in:        R%d (%3d,%c)' % (a, ord(c), c) )
         self.reg[a] = ord(c)
         self.pc += 2
@@ -273,9 +294,12 @@ class Vm:
                 self.readin,
                 self.noop ]
 
+        self.write_mem(0x657b, 0xd) 
+
         with open('./trace', 'w') as tr:
             while self.pc < MAX:
                 i = self.read_mem(self.pc)
+                pc2 = self.pc
                 
                 buf = io.StringIO()
                 if  i < len(fn_table):
@@ -283,16 +307,16 @@ class Vm:
                     if self.trace:
                         buf.seek(0)
                         instr = buf.readline()
-                        reg_str = str(['0x{:04x}'.format(x) for x in self.reg])
-                        stack_str = str(['0x{:04x}'.format(x) for x in self.stack])
-                        tr.write('[Ox{:04x}] {:2d}={:30s} {:s} {:s}\n'.format(self.pc, i, instr, reg_str, stack_str))
+                        reg_str = print_arr(self.reg)
+                        stack_str = print_arr(self.stack)
+                        tr.write('[Ox{:04x}] {:2d}={:30s} {:s} {:s}\n'.format(pc2, i, instr, reg_str, stack_str))
                 else:
                     self.pc = MAX
                     print('Unknown op code: ' + str(i))
-                
 
-    
-    
+def print_arr(arr):
+    return str(['0x{:04x}'.format(x) for x in arr])
+
 prog = load()
 
 with open('/Volumes/RAMDisk/mem', 'w+b', buffering=0) as mem:

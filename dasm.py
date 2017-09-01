@@ -12,13 +12,14 @@ def read():
     with open(fileName, 'rb') as f:
         bytes = f.read(2)
         while bytes:
-            n = (bytes[0] << 8) + (bytes[1])
+            n = (bytes[1] << 8) + (bytes[0])
             yield n
             bytes = f.read(2) 
 
 
 mem_stream = read()
-mem = '0x{1:04x}: 0x{0:04x} ({0:c})'
+mem = '0x{1:04x}: 0x{0:04x}'
+mem_chr = mem + ' ({0:c})'
 no_op = '0x{1:04x}: {0:4s}'
 one_op = '0x{1:04x}: {0:4s} 0x{2:04x}'
 one_op_chr = '0x{1:04x}: {0:4s} 0x{2:04x} {2:c}'
@@ -134,7 +135,11 @@ while op != None:
         print(no_op.format('noop', addr))
         addr += 1
     else:
-        print(mem.format(op, addr))
+        if op > ord('A') and op < ord('z'):
+            print(mem_chr.format(op, addr))
+        else:
+            print(mem.format(op, addr))
+
         addr += 1 
         
     op = next(mem_stream, None)
